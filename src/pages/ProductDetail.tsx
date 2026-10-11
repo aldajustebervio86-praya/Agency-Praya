@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, User, ImageOff, Tag, MapPin, ShoppingCart, Shield, Truck,
+  ArrowLeft, Loader2, User, ImageOff, Tag, MapPin, ShoppingCart, Shield, Truck, Boxes,
 } from "lucide-react";
 import { supabase, type Product, type SellerProfile, DELIVERY_FEE } from "../lib/supabase";
 import { formatPrice, formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
@@ -65,7 +65,8 @@ export default function ProductDetail() {
 
   const images = product.image_urls || [];
   const isOwnProduct = user?.id === product.seller_id;
-  const canOrder = product.status === "active" && !isOwnProduct;
+  const outOfStock = product.stock !== null && product.stock === 0;
+  const canOrder = product.status === "active" && !isOwnProduct && !outOfStock;
 
   const handleOrder = () => {
     if (!user) {
@@ -139,10 +140,18 @@ export default function ProductDetail() {
               {formatPrice(product.price, product.currency)}
             </p>
 
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-2">
               <span className={`inline-flex rounded-lg border px-3 py-1 text-xs font-medium ${getStatusColor(product.status)}`}>
                 {getStatusLabel(product.status)}
               </span>
+              {product.stock !== null && (
+                <span className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1 text-xs font-medium ${
+                  product.stock === 0 ? "bg-error-50 text-error-700 border-error-200" : "bg-success-50 text-success-700 border-success-200"
+                }`}>
+                  <Boxes className="h-3 w-3" />
+                  {product.stock === 0 ? "Rupture de stock" : `${product.stock} disponible${product.stock > 1 ? "s" : ""}`}
+                </span>
+              )}
             </div>
 
             <div className="mt-6">
@@ -204,6 +213,10 @@ export default function ProductDetail() {
                 <Link to="/dashboard" className="btn-secondary mt-3">
                   Gérer mes annonces
                 </Link>
+              </div>
+            ) : !isOwnProduct && outOfStock ? (
+              <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-5 text-center">
+                <p className="text-sm text-gray-500">Ce produit est en rupture de stock.</p>
               </div>
             ) : (
               <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-5 text-center">

@@ -112,6 +112,10 @@ export default function Checkout() {
       setError("La quantité doit être d'au moins 1.");
       return;
     }
+    if (product.stock !== null && quantity > product.stock) {
+      setError(`La quantité demandée dépude le stock disponible (${product.stock}).`);
+      return;
+    }
 
     setSubmitting(true);
 
@@ -204,11 +208,15 @@ export default function Checkout() {
               <input
                 type="number"
                 min="1"
+                max={product.stock ?? undefined}
                 required
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                 className="input-field"
               />
+              {product.stock !== null && (
+                <p className="text-xs text-gray-400 mt-1">{product.stock} disponible{product.stock > 1 ? "s" : ""}</p>
+              )}
             </div>
 
             <div>

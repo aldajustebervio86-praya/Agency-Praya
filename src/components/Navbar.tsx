@@ -51,10 +51,16 @@ export default function Navbar() {
                 Mes commandes
               </Link>
               {isAdmin && (
-                <Link to="/admin/orders" className="btn-ghost">
-                  <Shield className="h-4 w-4" />
-                  Administration
-                </Link>
+                <>
+                  <Link to="/admin/orders" className="btn-ghost">
+                    <Shield className="h-4 w-4" />
+                    Administration
+                  </Link>
+                  <Link to="/admin/monetization" className="btn-ghost">
+                    <TrendingUp className="h-4 w-4" />
+                    Demandes
+                  </Link>
+                </>
               )}
               <Link to="/dashboard" className="btn-ghost">
                 <LayoutDashboard className="h-4 w-4" />
@@ -119,14 +125,24 @@ export default function Navbar() {
                     Mes commandes
                   </Link>
                   {isAdmin && (
-                    <Link
-                      to="/admin/orders"
-                      className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Shield className="h-4 w-4" />
-                      Administration
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin/orders"
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Administration
+                      </Link>
+                      <Link
+                        to="/admin/monetization"
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                        Demandes
+                      </Link>
+                    </>
                   )}
                   <Link
                     to="/dashboard"

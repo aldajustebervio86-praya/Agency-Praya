@@ -73,18 +73,10 @@ export default function Orders() {
   };
 
   const handleAcceptDelivery = async () => {
-    if (!selectedOrder || selectedOrder.proposed_delivery_fee === null) return;
+    if (!selectedOrder) return;
     setActing(true);
     setActionError(null);
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        delivery_status: "accepted",
-        delivery_fee: selectedOrder.proposed_delivery_fee,
-        status: "payment_pending",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", selectedOrder.id);
+    const { error } = await supabase.rpc("buyer_accept_delivery", { p_order_id: selectedOrder.id });
     setActing(false);
     if (error) setActionError(error.message);
     else await refreshSelected();
@@ -94,14 +86,17 @@ export default function Orders() {
     if (!selectedOrder) return;
     setActing(true);
     setActionError(null);
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        delivery_status: "refused",
-        status: "delivery_refused",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", selectedOrder.id);
+    const { error } = await supabase.rpc("buyer_refuse_delivery", { p_order_id: selectedOrder.id });
+    setActing(false);
+    if (error) setActionError(error.message);
+    else await refreshSelected();
+  };
+
+  const handleConfirmDelivery = async () => {
+    if (!selectedOrder) return;
+    setActing(true);
+    setActionError(null);
+    const { error } = await supabase.rpc("buyer_confirm_delivery", { p_order_id: selectedOrder.id });
     setActing(false);
     if (error) setActionError(error.message);
     else await refreshSelected();
@@ -155,6 +150,11 @@ export default function Orders() {
                         <span className="rounded-lg bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                           {role === "buyer" ? "Acheteur" : "Vendeur"}
                         </span>
+                        {order.delivery_confirmed && (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-success-50 border border-success-200 px-2 py-0.5 text-xs text-success-700">
+                            <CheckCircle className="h-3 w-3" /> Reçu confirmé
+                          </span>
+                        )}
                       </div>
                       <p className="font-medium text-gray-900 text-sm truncate">
                         {(order.items || []).map(i => i.title_snapshot).join(", ") || "Produit"}
@@ -184,6 +184,7 @@ export default function Orders() {
           setActionError={setActionError}
           onAcceptDelivery={handleAcceptDelivery}
           onRefuseDelivery={handleRefuseDelivery}
+          onConfirmDelivery={handleConfirmDelivery}
         />
       )}
     </div>
@@ -199,6 +200,7 @@ function OrderDetailModal({
   actionError,
   onAcceptDelivery,
   onRefuseDelivery,
+  onConfirmDelivery,
 }: {
   order: OrderWithDetails;
   role: Role;
@@ -210,6 +212,7 @@ function OrderDetailModal({
   setActionError: (v: string | null) => void;
   onAcceptDelivery: () => Promise<void>;
   onRefuseDelivery: () => Promise<void>;
+  onConfirmDelivery: () => Promise<void>;
 }) {
   const itemsTotal = (order.items || []).reduce((sum, i) => sum + i.price_snapshot * i.quantity, 0);
   const effectiveDelivery = order.delivery_status === "accepted" && order.proposed_delivery_fee
@@ -221,6 +224,7 @@ function OrderDetailModal({
   );
 
   const canAcceptRefuse = role === "buyer" && order.delivery_status === "remote_proposed";
+  const canConfirmReceipt = role === "buyer" && order.status === "delivered" && !order.delivery_confirmed;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in" onClick={onClose}>
@@ -286,12 +290,10 @@ function OrderDetailModal({
               <span className="text-gray-600">Livraison ({getDeliveryStatusLabel(order.delivery_status)})</span>
               <span className="font-medium">{formatPrice(effectiveDelivery)}</span>
             </div>
-            {canAcceptRefuse && order.proposed_delivery_fee !== null && (
-              <div className="flex justify-between text-brand-700">
-                <span>Tarif ajusté proposé</span>
-                <span className="font-medium">{formatPrice(order.proposed_delivery_fee)}</span>
-              </div>
-              )}
+            <div className="flex justify-between">
+              <span className="text-gray-600">Commission</span>
+              <span className="font-medium">{formatPrice(order.commission || 0)}</span>
+            </div>
             <div className="border-t border-gray-100 pt-2 flex justify-between">
               <span className="font-display font-bold text-gray-900">Total</span>
               <span className="font-display font-bold text-brand-700">{formatPrice(total)}</span>
@@ -349,6 +351,29 @@ function OrderDetailModal({
             </div>
           )}
 
+          {/* Confirm receipt */}
+          {canConfirmReceipt && (
+            <div className="rounded-xl bg-success-50 border border-success-200 p-4">
+              <p className="text-sm text-success-800 mb-3 flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Avez-vous bien reçu votre commande ?
+              </p>
+              <button onClick={onConfirmDelivery} disabled={acting} className="btn-primary w-full">
+                <CheckCircle className="h-4 w-4" />
+                Confirmer la réception
+              </button>
+            </div>
+          )}
+
+          {order.delivery_confirmed && (
+            <div className="rounded-xl bg-success-50 border border-success-200 p-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-success-600" />
+              <p className="text-sm text-success-700">
+                Réception confirmée{order.delivery_confirmed_at && ` le ${formatDate(order.delivery_confirmed_at)}`}
+              </p>
+            </div>
+          )}
+
           {/* Payment info */}
           {order.status === "payment_pending" && role === "buyer" && (
             <div className="rounded-xl bg-warning-50 border border-warning-200 p-4">
@@ -394,7 +419,7 @@ function OrderDetailModal({
           {/* Status timeline */}
           <div className="border-t border-gray-100 pt-4">
             <h3 className="font-display font-semibold text-sm text-gray-900 mb-3">Suivi</h3>
-            <OrderTimeline status={order.status} />
+            <OrderTimeline status={order.status} confirmed={order.delivery_confirmed} />
           </div>
         </div>
       </div>
@@ -402,7 +427,7 @@ function OrderDetailModal({
   );
 }
 
-function OrderTimeline({ status }: { status: Order["status"] }) {
+function OrderTimeline({ status, confirmed }: { status: Order["status"]; confirmed: boolean }) {
   const steps: { key: string; label: string; icon: typeof Package }[] = [
     { key: "pending_seller_confirmation", label: "Confirmation vendeur", icon: Package },
     { key: "seller_confirmed", label: "Vendeur confirmé", icon: CheckCircle },
@@ -453,6 +478,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
             </div>
             <span className={`text-sm ${done ? "text-gray-900 font-medium" : "text-gray-400"} ${current ? "text-brand-700" : ""}`}>
               {step.label}
+              {step.key === "delivered" && confirmed && " — réception confirmée"}
             </span>
           </div>
         );

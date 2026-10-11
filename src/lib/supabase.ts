@@ -46,6 +46,7 @@ export type Product = {
   price: number;
   currency: string;
   image_urls: string[];
+  stock: number | null;
   status: "active" | "sold" | "paused";
   created_at: string;
   updated_at: string;
@@ -62,6 +63,7 @@ export type MonetizationRequest = {
   follower_count: number;
   country: string;
   notes: string;
+  admin_notes: string;
   status: "pending" | "in_review" | "approved" | "rejected" | "completed";
   created_at: string;
   updated_at: string;
@@ -92,12 +94,32 @@ export type Order = {
   delivery_explanation: string;
   delivery_address: string;
   delivery_status: DeliveryStatus;
+  delivery_confirmed: boolean;
+  delivery_confirmed_at: string | null;
   commission: number;
   payment_method: string;
   payment_verified: boolean;
   payment_verified_at: string | null;
   buyer_note: string;
   created_at: string;
+  updated_at: string;
+};
+
+export type VendorPayout = {
+  id: string;
+  seller_id: string;
+  amount: number;
+  transaction_reference: string;
+  status: "recorded" | "verified" | "cancelled";
+  payout_date: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AppSettings = {
+  id: number;
+  commission_rate: number;
   updated_at: string;
 };
 

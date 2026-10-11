@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
+import AdminMonetization from "./pages/AdminMonetization";
 
 export default function App() {
   return (
@@ -50,6 +51,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminOrders />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/monetization"
+            element={
+              <AdminRoute>
+                <AdminMonetization />
               </AdminRoute>
             }
           />

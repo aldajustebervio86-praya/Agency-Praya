@@ -33,7 +33,7 @@ export default function Monetization() {
     }
     const { data } = await supabase
       .from("monetization_requests")
-      .select("id, user_id, platform, account_handle, request_type, follower_count, country, notes, status, created_at, updated_at")
+      .select("id, user_id, platform, account_handle, request_type, follower_count, country, notes, admin_notes, status, created_at, updated_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setRequests(data || []);

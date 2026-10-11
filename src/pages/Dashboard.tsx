@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Package, Plus, Pencil, Trash2, Loader2, ImageOff, X, Save,
-  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart,
+  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart, Boxes,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase, type Product, type Category } from "../lib/supabase";
@@ -145,6 +145,12 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`inline-flex rounded-lg border px-2 py-0.5 text-xs font-medium ${getStatusColor(product.status)}`}>
                           {getStatusLabel(product.status)}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium ${
+                          product.stock === null ? "bg-gray-50 text-gray-500 border-gray-200" : product.stock === 0 ? "bg-error-50 text-error-700 border-error-200" : "bg-success-50 text-success-700 border-success-200"
+                        }`}>
+                          <Boxes className="h-3 w-3" />
+                          {product.stock === null ? "Stock illimité" : product.stock === 0 ? "Rupture" : `${product.stock} en stock`}
                         </span>
                         {product.category && (
                           <span className="text-xs text-gray-400">{product.category.name}</span>
@@ -421,6 +427,7 @@ function ProductForm({
   const [price, setPrice] = useState(product?.price?.toString() || "");
   const [categoryId, setCategoryId] = useState(product?.category_id || "");
   const [status, setStatus] = useState<"active" | "sold" | "paused">(product?.status || "active");
+  const [stock, setStock] = useState(product?.stock === null || product?.stock === undefined ? "" : product.stock.toString());
   const [imageUrls, setImageUrls] = useState<string[]>(product?.image_urls || []);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -454,6 +461,12 @@ function ProductForm({
     }
 
     setSaving(true);
+    const stockNum = stock.trim() === "" ? null : parseInt(stock);
+    if (stockNum !== null && (isNaN(stockNum) || stockNum < 0)) {
+      setError("Veuillez entrer une quantité en stock valide.");
+      return;
+    }
+
     const payload = {
       seller_id: user.id,
       category_id: categoryId || null,
@@ -461,6 +474,7 @@ function ProductForm({
       description: description.trim(),
       price: priceNum,
       image_urls: imageUrls,
+      stock: stockNum,
       status,
     };
 
@@ -553,13 +567,26 @@ function ProductForm({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Statut</label>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Stock</label>
+              <input
+                type="number"
+                min="0"
+                value={stock}
+                onChange={(e) => setStock(e.target.value)}
+                className="input-field"
+                placeholder="Laisser vide = illimité"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Statut</label>
             <select value={status} onChange={(e) => setStatus(e.target.value as "active" | "sold" | "paused")} className="input-field">
               <option value="active">Actif</option>
               <option value="paused">En pause</option>
               <option value="sold">Vendu</option>
             </select>
+            </div>
           </div>
 
           <div>
