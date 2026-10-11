@@ -72,6 +72,15 @@ export default function Login() {
             autoComplete="current-password"
           />
 
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
+
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Se connecter"}
           </button>
