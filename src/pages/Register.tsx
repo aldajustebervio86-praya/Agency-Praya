@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Store, Loader2, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
+import { Store, Loader2, Mail, User, AlertCircle, CheckCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Register() {
   const { signUp } = useAuth();
@@ -10,6 +11,7 @@ export default function Register() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +25,10 @@ export default function Register() {
     }
     if (displayName.trim().length < 2) {
       setError("Veuillez entrer un nom de vendeur valide.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Les deux mots de passe ne correspondent pas.");
       return;
     }
 
@@ -56,49 +62,56 @@ export default function Register() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de vendeur</label>
+            <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1.5">Nom de vendeur</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
+                id="reg-name"
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="input-field pl-11"
                 placeholder="Votre nom ou nom de boutique"
+                autoComplete="name"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
+            <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
+                id="reg-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field pl-11"
                 placeholder="votre@email.com"
+                autoComplete="email"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field pl-11"
-                placeholder="Minimum 6 caractères"
-              />
-            </div>
-          </div>
+          <PasswordInput
+            id="reg-password"
+            label="Mot de passe"
+            value={password}
+            onChange={setPassword}
+            placeholder="Minimum 6 caractères"
+            autoComplete="new-password"
+          />
+
+          <PasswordInput
+            id="reg-confirm-password"
+            label="Confirmer le mot de passe"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            placeholder="Répétez votre mot de passe"
+            autoComplete="new-password"
+          />
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Créer mon compte"}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Store, Loader2, Mail, Lock, AlertCircle } from "lucide-react";
+import { Store, Loader2, Mail, AlertCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -47,34 +48,29 @@ export default function Login() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
+                id="login-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field pl-11"
                 placeholder="votre@email.com"
+                autoComplete="email"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field pl-11"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
+          <PasswordInput
+            id="login-password"
+            label="Mot de passe"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Se connecter"}
