@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, MessageCircle, Phone, Mail, User, ImageOff, Tag, MapPin,
+  ArrowLeft, Loader2, User, ImageOff, Tag, MapPin, ShoppingCart, Shield, Truck,
 } from "lucide-react";
-import { supabase, type Product, type SellerProfile } from "../lib/supabase";
+import { supabase, type Product, type SellerProfile, DELIVERY_FEE } from "../lib/supabase";
 import { formatPrice, formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
-import { CONTACT } from "../lib/constants";
+import { useAuth } from "../context/AuthContext";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,11 +64,16 @@ export default function ProductDetail() {
   }
 
   const images = product.image_urls || [];
-  const whatsappNumber = seller?.whatsapp || CONTACT.whatsapp;
-  const whatsappMessage = encodeURIComponent(
-    `Bonjour, je suis intéressé(e) par votre annonce "${product.title}" sur Agency Prarya.`
-  );
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  const isOwnProduct = user?.id === product.seller_id;
+  const canOrder = product.status === "active" && !isOwnProduct;
+
+  const handleOrder = () => {
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: `/checkout/${product.id}` } } });
+      return;
+    }
+    navigate(`/checkout/${product.id}`);
+  };
 
   return (
     <div className="animate-fade-in">
@@ -150,7 +156,7 @@ export default function ProductDetail() {
               Publié le {formatDate(product.created_at)}
             </p>
 
-            {/* Seller contact */}
+            {/* Seller info (no direct contact) */}
             <div className="mt-8 rounded-2xl bg-gray-50 border border-gray-100 p-5">
               <h3 className="font-display font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <User className="h-5 w-5 text-brand-600" />
@@ -166,42 +172,44 @@ export default function ProductDetail() {
                 </p>
               )}
               {seller?.bio && <p className="text-sm text-gray-500 mt-1">{seller.bio}</p>}
-
-              <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary flex-1"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Contacter sur WhatsApp
-                </a>
-                {seller?.phone && (
-                  <a href={`tel:${seller.phone}`} className="btn-secondary flex-1">
-                    <Phone className="h-5 w-5" />
-                    Appeler
-                  </a>
-                )}
-              </div>
             </div>
 
-            {/* General contact */}
-            <div className="mt-4 rounded-2xl bg-brand-50 border border-brand-100 p-5">
-              <p className="text-sm text-gray-600 mb-3">
-                Besoin d'aide ? Contactez Agency Prarya directement :
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <a href={`mailto:${CONTACT.email}`} className="btn-ghost flex-1 justify-center">
-                  <Mail className="h-4 w-4" />
-                  {CONTACT.email}
-                </a>
-                <a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener noreferrer" className="btn-ghost flex-1 justify-center">
-                  <Phone className="h-4 w-4" />
-                  {CONTACT.phone}
-                </a>
+            {/* Order section */}
+            {canOrder ? (
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl bg-brand-50 border border-brand-100 p-4">
+                  <p className="text-sm text-gray-600 flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-brand-600" />
+                    Frais de livraison standard: <strong>{formatPrice(DELIVERY_FEE)}</strong>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Séparé du prix du produit. Le total vous sera affiché avant confirmation.
+                  </p>
+                </div>
+                <button onClick={handleOrder} className="btn-primary w-full">
+                  <ShoppingCart className="h-5 w-5" />
+                  Commander ce produit
+                </button>
+                <div className="flex items-start gap-2 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 text-xs text-gray-500">
+                  <Shield className="h-4 w-4 shrink-0 mt-0.5 text-gray-400" />
+                  <span>
+                    La commande est gérée par Agency Prarya. La communication avec le vendeur
+                    est assurée par l'administrateur. Aucun contact direct acheteur-vendeur.
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : isOwnProduct ? (
+              <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-5 text-center">
+                <p className="text-sm text-gray-500">Ceci est votre propre annonce.</p>
+                <Link to="/dashboard" className="btn-secondary mt-3">
+                  Gérer mes annonces
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-5 text-center">
+                <p className="text-sm text-gray-500">Ce produit n'est plus disponible à la commande.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

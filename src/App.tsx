@@ -11,6 +11,9 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Monetization from "./pages/Monetization";
 import Contact from "./pages/Contact";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
+import AdminOrders from "./pages/AdminOrders";
 
 export default function App() {
   return (
@@ -23,6 +26,7 @@ export default function App() {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/marketplace/product/:id" element={<ProductDetail />} />
           <Route path="/marketplace/:category/:id" element={<ProductDetail />} />
+          <Route path="/checkout/:id" element={<Checkout />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
@@ -30,6 +34,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute>
+                <AdminOrders />
               </ProtectedRoute>
             }
           />

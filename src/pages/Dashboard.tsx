@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import {
   Package, Plus, Pencil, Trash2, Loader2, ImageOff, X, Save,
-  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera,
+  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase, type Product, type Category } from "../lib/supabase";
 import { formatPrice, formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
 
-type Tab = "products" | "profile" | "monetization";
+type Tab = "products" | "profile" | "monetization" | "orders";
 
 export default function Dashboard() {
   const { user, profile, refreshProfile } = useAuth();
@@ -61,6 +61,7 @@ export default function Dashboard() {
 
   const tabs: { key: Tab; label: string; icon: typeof Package }[] = [
     { key: "products", label: "Mes annonces", icon: Package },
+    { key: "orders", label: "Commandes", icon: ShoppingCart },
     { key: "profile", label: "Mon profil", icon: User },
     { key: "monetization", label: "Monétisation", icon: TrendingUp },
   ];
@@ -175,6 +176,8 @@ export default function Dashboard() {
         {tab === "profile" && <ProfileTab profile={profile} refreshProfile={refreshProfile} />}
 
         {tab === "monetization" && <MonetizationTab />}
+
+        {tab === "orders" && <OrdersTab />}
       </div>
 
       {/* Product form modal */}
@@ -371,6 +374,29 @@ function MonetizationTab() {
       <Link to="/monetization" className="btn-primary mt-6">
         <TrendingUp className="h-5 w-5" />
         Accéder à l'espace monétisation
+      </Link>
+    </div>
+  );
+}
+
+// --- Orders Tab (links to full orders page) ---
+
+function OrdersTab() {
+  return (
+    <div className="card p-8 text-center max-w-2xl">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 mx-auto mb-4">
+        <ShoppingCart className="h-7 w-7" />
+      </div>
+      <h3 className="font-display font-semibold text-lg text-gray-900">
+        Mes commandes
+      </h3>
+      <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">
+        Suivez vos commandes en tant qu'acheteur ou vendeur. La communication
+        est gérée par l'administrateur.
+      </p>
+      <Link to="/orders" className="btn-primary mt-6">
+        <ShoppingCart className="h-5 w-5" />
+        Voir mes commandes
       </Link>
     </div>
   );

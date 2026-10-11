@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User } from "lucide-react";
+import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User, ShoppingCart, Shield } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
@@ -46,6 +46,14 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {user ? (
             <>
+              <Link to="/orders" className="btn-ghost">
+                <ShoppingCart className="h-4 w-4" />
+                Mes commandes
+              </Link>
+              <Link to="/admin/orders" className="btn-ghost">
+                <Shield className="h-4 w-4" />
+                Administration
+              </Link>
               <Link to="/dashboard" className="btn-ghost">
                 <LayoutDashboard className="h-4 w-4" />
                 Tableau de bord
@@ -100,6 +108,22 @@ export default function Navbar() {
             <div className="pt-3 mt-3 border-t border-gray-100">
               {user ? (
                 <>
+                  <Link
+                    to="/orders"
+                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Mes commandes
+                  </Link>
+                  <Link
+                    to="/admin/orders"
+                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Administration
+                  </Link>
                   <Link
                     to="/dashboard"
                     className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"

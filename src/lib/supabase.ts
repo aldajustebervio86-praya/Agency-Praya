@@ -67,6 +67,72 @@ export type MonetizationRequest = {
   updated_at: string;
 };
 
+export type OrderStatus =
+  | "pending_seller_confirmation"
+  | "seller_confirmed"
+  | "delivery_pending"
+  | "delivery_proposed"
+  | "delivery_accepted"
+  | "delivery_refused"
+  | "payment_pending"
+  | "payment_verified"
+  | "preparing"
+  | "delivered"
+  | "cancelled";
+
+export type DeliveryStatus = "standard" | "remote_proposed" | "accepted" | "refused";
+
+export type Order = {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  status: OrderStatus;
+  delivery_fee: number;
+  proposed_delivery_fee: number | null;
+  delivery_explanation: string;
+  delivery_address: string;
+  delivery_status: DeliveryStatus;
+  commission: number;
+  payment_method: string;
+  payment_verified: boolean;
+  payment_verified_at: string | null;
+  buyer_note: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  title_snapshot: string;
+  price_snapshot: number;
+  quantity: number;
+};
+
+export type MessageTemplate = {
+  id: string;
+  name: string;
+  type: "seller_confirmation" | "delivery_proposal";
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderMessage = {
+  id: string;
+  order_id: string;
+  direction: "to_seller" | "to_buyer";
+  template_id: string | null;
+  content: string;
+  response: string | null;
+  status: "sent" | "pending_response" | "responded";
+  sent_at: string;
+  response_at: string | null;
+};
+
+export const DELIVERY_FEE = 250;
+
 export const CATEGORIES = [
   { name: "Électronique", slug: "electronique", icon: "Smartphone" },
   { name: "Accessoires", slug: "accessoires", icon: "Watch" },
