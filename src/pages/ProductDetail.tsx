@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, MessageCircle, Phone, Mail, User, ImageOff, Tag,
+  ArrowLeft, Loader2, MessageCircle, Phone, Mail, User, ImageOff, Tag, MapPin,
 } from "lucide-react";
 import { supabase, type Product, type SellerProfile } from "../lib/supabase";
 import { formatPrice, formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
@@ -159,6 +159,12 @@ export default function ProductDetail() {
               <p className="font-medium text-gray-900">
                 {seller?.display_name || "Vendeur"}
               </p>
+              {seller?.location && (
+                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {seller.location}
+                </p>
+              )}
               {seller?.bio && <p className="text-sm text-gray-500 mt-1">{seller.bio}</p>}
 
               <div className="mt-4 flex flex-col sm:flex-row gap-3">

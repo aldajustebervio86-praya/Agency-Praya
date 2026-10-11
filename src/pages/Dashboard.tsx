@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Package, Plus, Pencil, Trash2, Loader2, ImageOff, X, Save,
-  Phone, MessageCircle, User, Mail, TrendingUp,
+  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase, type Product, type Category } from "../lib/supabase";
@@ -196,7 +196,7 @@ function ProfileTab({
   profile,
   refreshProfile,
 }: {
-  profile: { display_name: string; phone: string; whatsapp: string; bio: string } | null;
+  profile: { display_name: string; phone: string; whatsapp: string; bio: string; location: string; avatar_url: string } | null;
   refreshProfile: () => Promise<void>;
 }) {
   const { user } = useAuth();
@@ -204,6 +204,8 @@ function ProfileTab({
   const [phone, setPhone] = useState(profile?.phone || "");
   const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || "");
   const [bio, setBio] = useState(profile?.bio || "");
+  const [location, setLocation] = useState(profile?.location || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +223,8 @@ function ProfileTab({
         phone: phone.trim(),
         whatsapp: whatsapp.trim(),
         bio: bio.trim(),
+        location: location.trim(),
+        avatar_url: avatarUrl.trim(),
         updated_at: new Date().toISOString(),
       });
     setSaving(false);
@@ -235,8 +239,32 @@ function ProfileTab({
 
   return (
     <form onSubmit={handleSave} className="card p-6 max-w-2xl space-y-4">
+      {/* Avatar */}
+      <div className="flex items-center gap-4">
+        <div className="h-20 w-20 rounded-2xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-gray-300">
+              <Camera className="h-8 w-8" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Photo de profil (URL)</label>
+          <input
+            type="url"
+            value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)}
+            className="input-field"
+            placeholder="https://exemple.com/photo.jpg"
+          />
+          <p className="text-xs text-gray-400 mt-1">Collez le lien direct d'une image.</p>
+        </div>
+      </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de vendeur</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de la boutique</label>
         <div className="relative">
           <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -246,6 +274,20 @@ function ProfileTab({
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-field pl-11"
             placeholder="Votre nom ou nom de boutique"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Localisation</label>
+        <div className="relative">
+          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="input-field pl-11"
+            placeholder="ex: Port-au-Prince, Haïti"
           />
         </div>
       </div>
@@ -281,7 +323,7 @@ function ProfileTab({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Bio (optionnel)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Description (optionnel)</label>
         <textarea
           value={bio}
           onChange={(e) => setBio(e.target.value)}

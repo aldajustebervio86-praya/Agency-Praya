@@ -38,6 +38,16 @@ export function getStatusLabel(status: string): string {
   return labels[status] || status;
 }
 
+export function getRequestTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    monetization: "Monétisation",
+    consultation: "Consultation",
+    growth: "Croissance",
+    other: "Autre",
+  };
+  return labels[type] || type;
+}
+
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     pending: "bg-warning-100 text-warning-700 border-warning-200",

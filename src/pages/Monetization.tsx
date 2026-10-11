@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase, type MonetizationRequest } from "../lib/supabase";
-import { formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
+import { formatDate, getStatusLabel, getStatusColor, getRequestTypeLabel } from "../lib/constants";
 
 export default function Monetization() {
   const { user, loading: authLoading } = useAuth();
@@ -17,6 +17,7 @@ export default function Monetization() {
 
   // Form state
   const [platform, setPlatform] = useState<"tiktok" | "instagram">("tiktok");
+  const [requestType, setRequestType] = useState<"monetization" | "consultation" | "growth" | "other">("monetization");
   const [accountHandle, setAccountHandle] = useState("");
   const [followerCount, setFollowerCount] = useState("");
   const [country, setCountry] = useState("");
@@ -32,7 +33,7 @@ export default function Monetization() {
     }
     const { data } = await supabase
       .from("monetization_requests")
-      .select("*")
+      .select("id, user_id, platform, account_handle, request_type, follower_count, country, notes, status, created_at, updated_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setRequests(data || []);
@@ -62,6 +63,7 @@ export default function Monetization() {
     const { error } = await supabase.from("monetization_requests").insert({
       user_id: user.id,
       platform,
+      request_type: requestType,
       account_handle: accountHandle.trim().replace(/^@/, ""),
       follower_count: parseInt(followerCount) || 0,
       country: country.trim(),
@@ -77,6 +79,7 @@ export default function Monetization() {
       setFollowerCount("");
       setCountry("");
       setNotes("");
+      setRequestType("monetization");
       setShowForm(false);
       fetchRequests();
       setTimeout(() => setSuccess(false), 4000);
@@ -200,6 +203,20 @@ export default function Monetization() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type de demande</label>
+                  <select
+                    value={requestType}
+                    onChange={(e) => setRequestType(e.target.value as "monetization" | "consultation" | "growth" | "other")}
+                    className="input-field"
+                  >
+                    <option value="monetization">Monétisation du compte</option>
+                    <option value="consultation">Consultation / Conseil</option>
+                    <option value="growth">Croissance d'audience</option>
+                    <option value="other">Autre</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Nom d'utilisateur du compte
                   </label>
@@ -305,12 +322,18 @@ export default function Monetization() {
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
                       <div>
-                        <p className="text-gray-400 text-xs">Abonnés</p>
-                        <p className="text-gray-700 font-medium">
-                          {req.follower_count.toLocaleString("fr-FR")}
-                        </p>
+                        <p className="text-gray-400 text-xs">Type</p>
+                        <p className="text-gray-700 font-medium">{getRequestTypeLabel(req.request_type)}</p>
                       </div>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-xs">Abonnés</p>
+                      <p className="text-gray-700 font-medium">
+                        {req.follower_count.toLocaleString("fr-FR")}
+                      </p>
+                    </div>
                       {req.country && (
                         <div>
                           <p className="text-gray-400 text-xs">Pays</p>

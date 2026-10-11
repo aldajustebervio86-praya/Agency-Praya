@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Mail, Phone, Instagram, Facebook, MessageCircle, Send,
-  Loader2, CheckCircle, AlertCircle, MapPin,
+  Loader2, CheckCircle, AlertCircle, MapPin, Wallet,
 } from "lucide-react";
 import { CONTACT } from "../lib/constants";
 
@@ -121,6 +121,30 @@ export default function Contact() {
                   <s.icon className="h-5 w-5" />
                 </a>
               ))}
+            </div>
+
+            {/* MonCash payment info */}
+            <div className="mt-8 rounded-2xl bg-accent-50 border border-accent-100 p-5">
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-accent-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Paiement par MonCash</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Pour vos paiements, utilisez MonCash au numéro <strong>{CONTACT.phone}</strong>.
+                    Contactez-nous d'abord pour confirmer les modalités et le montant avant tout transfert.
+                    Aucune information bancaire n'est demandée ni stockée.
+                  </p>
+                  <a
+                    href={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent("Bonjour, je souhaite obtenir des informations sur le paiement par MonCash.")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary mt-3"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Nous contacter pour MonCash
+                  </a>
+                </div>
+              </div>
             </div>
 
             {/* Notice */}

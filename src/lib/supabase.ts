@@ -23,6 +23,8 @@ export type SellerProfile = {
   phone: string;
   whatsapp: string;
   bio: string;
+  location: string;
+  avatar_url: string;
   created_at: string;
   updated_at: string;
 };
@@ -56,6 +58,7 @@ export type MonetizationRequest = {
   user_id: string;
   platform: "tiktok" | "instagram";
   account_handle: string;
+  request_type: "monetization" | "consultation" | "growth" | "other";
   follower_count: number;
   country: string;
   notes: string;
