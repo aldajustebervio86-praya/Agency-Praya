@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import CategoryBar from "./components/CategoryBar";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute, { AdminRoute } from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Marketplace from "./pages/Marketplace";
 import ProductDetail from "./pages/ProductDetail";
@@ -48,9 +48,9 @@ export default function App() {
           <Route
             path="/admin/orders"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminOrders />
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
           <Route path="/monetization" element={<Monetization />} />

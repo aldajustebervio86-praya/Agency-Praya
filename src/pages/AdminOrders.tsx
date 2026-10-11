@@ -38,10 +38,9 @@ export default function AdminOrders() {
     } else {
       const ordersWithDetails = await Promise.all(
         (data || []).map(async (order: OrderWithDetails) => {
-          const [itemsRes, messagesRes, buyerRes] = await Promise.all([
+          const [itemsRes, messagesRes] = await Promise.all([
             supabase.from("order_items").select("*").eq("order_id", order.id),
             supabase.from("order_messages").select("*").eq("order_id", order.id).order("sent_at", { ascending: true }),
-            supabase.from("auth.users").select("email").eq("id", order.buyer_id).maybeSingle(),
           ]);
           return {
             ...order,

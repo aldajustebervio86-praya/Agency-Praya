@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User, ShoppingCart, Shield } from "lucide-react";
+import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User, ShoppingCart, Shield, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -50,10 +50,12 @@ export default function Navbar() {
                 <ShoppingCart className="h-4 w-4" />
                 Mes commandes
               </Link>
-              <Link to="/admin/orders" className="btn-ghost">
-                <Shield className="h-4 w-4" />
-                Administration
-              </Link>
+              {isAdmin && (
+                <Link to="/admin/orders" className="btn-ghost">
+                  <Shield className="h-4 w-4" />
+                  Administration
+                </Link>
+              )}
               <Link to="/dashboard" className="btn-ghost">
                 <LayoutDashboard className="h-4 w-4" />
                 Tableau de bord
@@ -116,14 +118,16 @@ export default function Navbar() {
                     <ShoppingCart className="h-4 w-4" />
                     Mes commandes
                   </Link>
-                  <Link
-                    to="/admin/orders"
-                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <Shield className="h-4 w-4" />
-                    Administration
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/orders"
+                      className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Administration
+                    </Link>
+                  )}
                   <Link
                     to="/dashboard"
                     className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"

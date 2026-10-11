@@ -7,6 +7,7 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: SellerProfile | null;
+  isAdmin: boolean;
   loading: boolean;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<SellerProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function fetchProfile(userId: string) {
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        setIsAdmin(session.user.app_metadata?.role === "admin");
         fetchProfile(session.user.id).then((p) => {
           if (mounted) {
             setProfile(p);
@@ -59,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         });
       } else {
+        setIsAdmin(false);
         setLoading(false);
       }
     });
@@ -71,10 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(newSession?.user ?? null);
 
           if (newSession?.user) {
+            setIsAdmin(newSession.user.app_metadata?.role === "admin");
             const p = await fetchProfile(newSession.user.id);
             if (mounted) setProfile(p);
           } else {
             setProfile(null);
+            setIsAdmin(false);
           }
           setLoading(false);
         })();
@@ -123,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}
+      value={{ session, user, profile, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
