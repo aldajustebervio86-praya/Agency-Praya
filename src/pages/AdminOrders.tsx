@@ -381,6 +381,22 @@ function OrderDetailModal({
     else await onRefresh();
   };
 
+  const handleAdminAcceptDelivery = async () => {
+    setActing(true);
+    setActionError(null);
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        delivery_status: "accepted",
+        status: "payment_pending",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id);
+    setActing(false);
+    if (error) setActionError(error.message);
+    else await onRefresh();
+  };
+
   const handleSendMessage = async () => {
     if (messageContent.trim().length < 5) {
       setActionError("Le message doit contenir au moins 5 caractères.");
@@ -428,6 +444,7 @@ function OrderDetailModal({
 
   const canConfirmSeller = order.status === "pending_seller_confirmation";
   const canProposeDelivery = order.status === "seller_confirmed" || order.status === "delivery_pending";
+  const canAcceptDelivery = order.status === "delivery_proposed" && order.delivery_status === "remote_proposed";
   const canVerifyPayment = order.status === "payment_pending";
   const canPrepare = order.status === "payment_verified";
   const canDeliver = order.status === "preparing";
@@ -567,6 +584,12 @@ function OrderDetailModal({
               </p>
               {order.delivery_explanation && <p className="text-xs text-gray-500 mt-1">Raison: {order.delivery_explanation}</p>}
               <p className="text-xs text-gray-500 mt-2">En attente de réponse de l'acheteur.</p>
+              {canAcceptDelivery && (
+                <button onClick={handleAdminAcceptDelivery} disabled={acting} className="btn-primary w-full mt-3">
+                  <CheckCircle className="h-4 w-4" />
+                  Valider la livraison au nom de l'acheteur
+                </button>
+              )}
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Package, Plus, Pencil, Trash2, Loader2, ImageOff, X, Save,
-  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart, Boxes,
+  Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart, Boxes, Upload, AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase, type Product, type Category } from "../lib/supabase";
@@ -429,16 +429,55 @@ function ProductForm({
   const [status, setStatus] = useState<"active" | "sold" | "paused">(product?.status || "active");
   const [stock, setStock] = useState(product?.stock === null || product?.stock === undefined ? "" : product.stock.toString());
   const [imageUrls, setImageUrls] = useState<string[]>(product?.image_urls || []);
-  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAddImage = () => {
-    const url = imageUrlInput.trim();
-    if (url && !imageUrls.includes(url)) {
-      setImageUrls([...imageUrls, url]);
-      setImageUrlInput("");
+  const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!user) return;
+
+    setError(null);
+    setUploading(true);
+
+    for (const file of Array.from(files)) {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        setError(`Format non supporté: ${file.name}. Utilisez JPG, PNG ou WEBP.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`Fichier trop volumineux: ${file.name}. Maximum 5 MB.`);
+        continue;
+      }
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) {
+        setError(`Échec du téléchargement de ${file.name}: ${uploadError.message}`);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(filePath);
+
+      if (urlData.publicUrl) {
+        setImageUrls((prev) => [...prev, urlData.publicUrl]);
+      }
     }
+
+    setUploading(false);
+    e.target.value = "";
   };
 
   const handleRemoveImage = (url: string) => {
@@ -590,47 +629,53 @@ function ProductForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Photos (URLs)</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Photos du produit</label>
+            <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 hover:border-brand-300 transition-colors py-8 px-4 cursor-pointer">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              </div>
+              <span className="text-sm text-gray-600 font-medium">
+                {uploading ? "Téléchargement en cours..." : "Ajouter une photo"}
+              </span>
+              <span className="text-xs text-gray-400">JPG, PNG ou WEBP — 5 MB max par photo</span>
               <input
-                type="url"
-                value={imageUrlInput}
-                onChange={(e) => setImageUrlInput(e.target.value)}
-                className="input-field flex-1"
-                placeholder="https://exemple.com/image.jpg"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={handleFileSelect}
+                disabled={uploading}
+                className="hidden"
               />
-              <button type="button" onClick={handleAddImage} className="btn-secondary shrink-0">
-                <Plus className="h-4 w-4" />
-                Ajouter
-              </button>
-            </div>
+            </label>
             {imageUrls.length > 0 && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {imageUrls.map((url) => (
-                  <div key={url} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
-                    <img src={url} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                    <span className="text-xs text-gray-500 truncate flex-1">{url}</span>
+                  <div key={url} className="relative group rounded-xl overflow-hidden bg-gray-100 aspect-square">
+                    <img src={url} alt="" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(url)}
-                      className="p-1 rounded text-gray-400 hover:text-error-600"
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-2">
-              Collez le lien direct d'une image (ex: depuis un hébergeur d'images).
-            </p>
+            {error && (
+              <p className="text-xs text-error-600 mt-2 flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {error}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary flex-1">
               Annuler
             </button>
-            <button type="submit" disabled={saving} className="btn-primary flex-1">
+            <button type="submit" disabled={saving || uploading} className="btn-primary flex-1">
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
               {product ? "Mettre à jour" : "Publier"}
             </button>
