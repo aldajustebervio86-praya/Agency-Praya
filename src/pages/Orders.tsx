@@ -102,6 +102,24 @@ export default function Orders() {
     else await refreshSelected();
   };
 
+  const handleSellerConfirm = async (action: "confirm" | "refuse") => {
+    if (!selectedOrder) return;
+    setActing(true);
+    setActionError(null);
+    const { data, error } = await supabase.rpc("seller_confirm_order", {
+      p_order_id: selectedOrder.id,
+      p_action: action,
+    });
+    setActing(false);
+    if (error) {
+      setActionError(error.message);
+    } else if (data && typeof data === "object" && "error" in data && data.error) {
+      setActionError(String(data.error));
+    } else {
+      await refreshSelected();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -185,6 +203,7 @@ export default function Orders() {
           onAcceptDelivery={handleAcceptDelivery}
           onRefuseDelivery={handleRefuseDelivery}
           onConfirmDelivery={handleConfirmDelivery}
+          onSellerConfirm={handleSellerConfirm}
         />
       )}
     </div>
@@ -201,6 +220,7 @@ function OrderDetailModal({
   onAcceptDelivery,
   onRefuseDelivery,
   onConfirmDelivery,
+  onSellerConfirm,
 }: {
   order: OrderWithDetails;
   role: Role;
@@ -213,6 +233,7 @@ function OrderDetailModal({
   onAcceptDelivery: () => Promise<void>;
   onRefuseDelivery: () => Promise<void>;
   onConfirmDelivery: () => Promise<void>;
+  onSellerConfirm: (action: "confirm" | "refuse") => Promise<void>;
 }) {
   const itemsTotal = (order.items || []).reduce((sum, i) => sum + i.price_snapshot * i.quantity, 0);
   const effectiveDelivery = order.delivery_status === "accepted" && order.proposed_delivery_fee
@@ -225,6 +246,7 @@ function OrderDetailModal({
 
   const canAcceptRefuse = role === "buyer" && order.delivery_status === "remote_proposed";
   const canConfirmReceipt = role === "buyer" && order.status === "delivered" && !order.delivery_confirmed;
+  const canSellerConfirm = role === "seller" && order.status === "pending_seller_confirmation";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in" onClick={onClose}>
@@ -299,6 +321,51 @@ function OrderDetailModal({
               <span className="font-display font-bold text-brand-700">{formatPrice(total)}</span>
             </div>
           </div>
+
+          {/* Seller confirmation */}
+          {canSellerConfirm && (
+            <div className="rounded-xl bg-warning-50 border border-warning-200 p-4 space-y-3">
+              <p className="text-sm text-warning-800 flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Confirmation requise
+              </p>
+              <p className="text-sm text-gray-600">
+                Vérifiez la disponibilité du produit, la quantité et le prix avant de confirmer cette commande.
+              </p>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => onSellerConfirm("confirm")}
+                  disabled={acting}
+                  className="btn-primary flex-1"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Confirmer la commande
+                </button>
+                <button
+                  onClick={() => { if (confirm("Refuser cette commande ? Elle sera annulée.")) onSellerConfirm("refuse"); }}
+                  disabled={acting}
+                  className="btn-secondary flex-1 text-error-600 hover:bg-error-50"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Refuser
+                </button>
+              </div>
+            </div>
+          )}
+
+          {role === "seller" && order.status === "seller_confirmed" && (
+            <div className="rounded-xl bg-success-50 border border-success-200 p-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-success-600" />
+              <p className="text-sm text-success-700">Vous avez confirmé cette commande.</p>
+            </div>
+          )}
+
+          {role === "seller" && order.status === "cancelled" && (
+            <div className="rounded-xl bg-error-50 border border-error-200 p-3 flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-error-600" />
+              <p className="text-sm text-error-700">Cette commande a été annulée.</p>
+            </div>
+          )}
 
           {/* Remote delivery proposal */}
           {canAcceptRefuse && order.proposed_delivery_fee !== null && (
