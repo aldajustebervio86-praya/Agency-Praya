@@ -17,6 +17,9 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
 import AdminMonetization from "./pages/AdminMonetization";
+import AdminProducts from "./pages/AdminProducts";
+import AdminDeliveryRoutes from "./pages/AdminDeliveryRoutes";
+import MobileNav from "./components/MobileNav";
 
 export default function App() {
   return (
@@ -66,11 +69,29 @@ export default function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminRoute>
+                <AdminProducts />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/delivery-routes"
+            element={
+              <AdminRoute>
+                <AdminDeliveryRoutes />
+              </AdminRoute>
+            }
+          />
           <Route path="/monetization" element={<Monetization />} />
           <Route path="/contact" element={<Contact />} />
         </Routes>
       </main>
       <Footer />
+      <MobileNav />
+      <div className="h-14 md:hidden" />
     </div>
   );
 }

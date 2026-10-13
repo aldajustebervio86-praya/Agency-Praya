@@ -4,10 +4,11 @@ import {
   Phone, MessageCircle, User, Mail, TrendingUp, MapPin, Camera, ShoppingCart, Boxes, Upload, AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { supabase, type Product, type Category } from "../lib/supabase";
+import { supabase, type Product, type Category, type Notification, HAITI_CITIES } from "../lib/supabase";
 import { formatPrice, formatDate, getStatusLabel, getStatusColor } from "../lib/constants";
+import { Heart, Bell, ShieldCheck, ShieldAlert, Clock } from "lucide-react";
 
-type Tab = "products" | "profile" | "monetization" | "orders";
+type Tab = "products" | "profile" | "monetization" | "orders" | "favorites" | "notifications";
 
 export default function Dashboard() {
   const { user, profile, refreshProfile } = useAuth();
@@ -62,6 +63,8 @@ export default function Dashboard() {
   const tabs: { key: Tab; label: string; icon: typeof Package }[] = [
     { key: "products", label: "Mes annonces", icon: Package },
     { key: "orders", label: "Commandes", icon: ShoppingCart },
+    { key: "favorites", label: "Favoris", icon: Heart },
+    { key: "notifications", label: "Notifications", icon: Bell },
     { key: "profile", label: "Mon profil", icon: User },
     { key: "monetization", label: "Monétisation", icon: TrendingUp },
   ];
@@ -142,10 +145,34 @@ export default function Dashboard() {
                       <p className="text-sm text-brand-700 font-medium">
                         {formatPrice(product.price, product.currency)}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className={`inline-flex rounded-lg border px-2 py-0.5 text-xs font-medium ${getStatusColor(product.status)}`}>
                           {getStatusLabel(product.status)}
                         </span>
+                        {product.moderation_status === "pending" && (
+                          <span className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium bg-warning-50 text-warning-700 border-warning-200">
+                            <Clock className="h-3 w-3" />
+                            En attente de modération
+                          </span>
+                        )}
+                        {product.moderation_status === "approved" && (
+                          <span className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium bg-success-50 text-success-700 border-success-200">
+                            <ShieldCheck className="h-3 w-3" />
+                            Approuvé
+                          </span>
+                        )}
+                        {product.moderation_status === "rejected" && (
+                          <span className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium bg-error-50 text-error-700 border-error-200">
+                            <ShieldAlert className="h-3 w-3" />
+                            Refusé
+                          </span>
+                        )}
+                        {product.moderation_status === "revision" && (
+                          <span className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium bg-warning-50 text-warning-700 border-warning-200">
+                            <ShieldAlert className="h-3 w-3" />
+                            Correction demandée
+                          </span>
+                        )}
                         <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium ${
                           product.stock === null ? "bg-gray-50 text-gray-500 border-gray-200" : product.stock === 0 ? "bg-error-50 text-error-700 border-error-200" : "bg-success-50 text-success-700 border-success-200"
                         }`}>
@@ -184,6 +211,10 @@ export default function Dashboard() {
         {tab === "monetization" && <MonetizationTab />}
 
         {tab === "orders" && <OrdersTab />}
+
+        {tab === "favorites" && <FavoritesTab userId={user?.id || ""} />}
+
+        {tab === "notifications" && <NotificationsTab userId={user?.id || ""} />}
       </div>
 
       {/* Product form modal */}
@@ -428,6 +459,7 @@ function ProductForm({
   const [categoryId, setCategoryId] = useState(product?.category_id || "");
   const [status, setStatus] = useState<"active" | "sold" | "paused">(product?.status || "active");
   const [stock, setStock] = useState(product?.stock === null || product?.stock === undefined ? "" : product.stock.toString());
+  const [originCity, setOriginCity] = useState(product?.origin_city || "");
   const [imageUrls, setImageUrls] = useState<string[]>(product?.image_urls || []);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -515,6 +547,7 @@ function ProductForm({
       image_urls: imageUrls,
       stock: stockNum,
       status,
+      origin_city: originCity || null,
     };
 
     if (product) {
@@ -524,7 +557,7 @@ function ProductForm({
         .eq("id", product.id);
       if (error) setError(error.message);
     } else {
-      const { error } = await supabase.from("products").insert(payload);
+      const { error } = await supabase.from("products").insert({ ...payload, moderation_status: "pending" });
       if (error) setError(error.message);
     }
 
@@ -606,6 +639,24 @@ function ProductForm({
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Ville de départ</label>
+            <div className="relative">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+              <select
+                value={originCity}
+                onChange={(e) => setOriginCity(e.target.value)}
+                className="input-field pl-11 appearance-none"
+              >
+                <option value="">Sélectionnez la ville d'origine</option>
+                {HAITI_CITIES.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Utilisée pour calculer les frais de livraison.</p>
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Stock</label>
@@ -682,6 +733,166 @@ function ProductForm({
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+// --- Favorites Tab ---
+
+function FavoritesTab({ userId }: { userId: string }) {
+  const [favorites, setFavorites] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFavorites() {
+      if (!userId) return;
+      const { data } = await supabase
+        .from("favorites")
+        .select(`product:products(*, category:categories(*))`)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (data) {
+        setFavorites(data.map((f: { product: Product | Product[] }) => {
+          const p = Array.isArray(f.product) ? f.product[0] : f.product;
+          return p as Product;
+        }).filter(Boolean) as Product[]);
+      }
+      setLoading(false);
+    }
+    fetchFavorites();
+  }, [userId]);
+
+  const handleRemoveFavorite = async (productId: string) => {
+    await supabase.from("favorites").delete().eq("user_id", userId).eq("product_id", productId);
+    setFavorites(favorites.filter((p) => p.id !== productId));
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>;
+  }
+
+  if (favorites.length === 0) {
+    return (
+      <div className="card p-12 text-center max-w-2xl">
+        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="font-display font-semibold text-lg text-gray-700">Aucun favori</h3>
+        <p className="text-sm text-gray-500 mt-1">Ajoutez des produits à vos favoris pour les retrouver ici.</p>
+        <Link to="/marketplace" className="btn-primary mt-6">Parcourir la marketplace</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      {favorites.map((product) => (
+        <div key={product.id} className="card p-4 flex gap-4 items-center">
+          <div className="h-20 w-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+            {product.image_urls?.[0] ? (
+              <img src={product.image_urls[0]} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-gray-300">
+                <ImageOff className="h-6 w-6" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 truncate">{product.title}</h3>
+            <p className="text-sm text-brand-700 font-medium">{formatPrice(product.price, product.currency)}</p>
+            {product.origin_city && <p className="text-xs text-gray-400 mt-1">Ville: {product.origin_city}</p>}
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link to={`/marketplace/product/${product.id}`} className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50">
+              <Package className="h-5 w-5" />
+            </Link>
+            <button onClick={() => handleRemoveFavorite(product.id)} className="p-2 rounded-lg text-gray-400 hover:text-error-600 hover:bg-error-50">
+              <Heart className="h-5 w-5 fill-current" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// --- Notifications Tab ---
+
+function NotificationsTab({ userId }: { userId: string }) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchNotifications() {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (data) setNotifications(data as Notification[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [userId]);
+
+  const handleMarkRead = async (id: string) => {
+    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    setNotifications(notifications.map((n) => n.id === id ? { ...n, is_read: true } : n));
+  };
+
+  const handleMarkAllRead = async () => {
+    await supabase.from("notifications").update({ is_read: true }).eq("user_id", userId).eq("is_read", false);
+    setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>;
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <div className="card p-12 text-center max-w-2xl">
+        <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="font-display font-semibold text-lg text-gray-700">Aucune notification</h3>
+        <p className="text-sm text-gray-500 mt-1">Vos notifications apparaîtront ici.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl space-y-3">
+      <div className="flex justify-end">
+        <button onClick={handleMarkAllRead} className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+          Tout marquer comme lu
+        </button>
+      </div>
+      {notifications.map((n) => (
+        <div key={n.id} className={`card p-4 ${n.is_read ? "opacity-60" : ""}`}>
+          <div className="flex items-start gap-3">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
+              n.type === "order" ? "bg-brand-100 text-brand-700" :
+              n.type === "message" ? "bg-cyan-100 text-cyan-700" :
+              n.type === "monetization" ? "bg-success-100 text-success-700" :
+              "bg-gray-100 text-gray-600"
+            }`}>
+              {n.type === "order" ? <ShoppingCart className="h-4 w-4" /> :
+               n.type === "message" ? <Mail className="h-4 w-4" /> :
+               n.type === "monetization" ? <TrendingUp className="h-4 w-4" /> :
+               <Bell className="h-4 w-4" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 text-sm">{n.title}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{n.body}</p>
+              <p className="text-xs text-gray-400 mt-1">{formatDate(n.created_at)}</p>
+            </div>
+            {!n.is_read && (
+              <button onClick={() => handleMarkRead(n.id)} className="text-xs text-brand-600 hover:text-brand-700 shrink-0">
+                Marquer lu
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

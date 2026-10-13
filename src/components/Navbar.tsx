@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User, ShoppingCart, Shield, ShieldAlert } from "lucide-react";
+import { Menu, X, Store, TrendingUp, LayoutDashboard, LogOut, User, ShoppingCart, Shield, Truck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
@@ -54,7 +54,15 @@ export default function Navbar() {
                 <>
                   <Link to="/admin/orders" className="btn-ghost">
                     <Shield className="h-4 w-4" />
-                    Administration
+                    Commandes
+                  </Link>
+                  <Link to="/admin/products" className="btn-ghost">
+                    <Shield className="h-4 w-4" />
+                    Annonces
+                  </Link>
+                  <Link to="/admin/delivery-routes" className="btn-ghost">
+                    <Truck className="h-4 w-4" />
+                    Livraison
                   </Link>
                   <Link to="/admin/monetization" className="btn-ghost">
                     <TrendingUp className="h-4 w-4" />
@@ -132,7 +140,23 @@ export default function Navbar() {
                         onClick={() => setMobileOpen(false)}
                       >
                         <Shield className="h-4 w-4" />
-                        Administration
+                        Admin Commandes
+                      </Link>
+                      <Link
+                        to="/admin/products"
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin Annonces
+                      </Link>
+                      <Link
+                        to="/admin/delivery-routes"
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <Truck className="h-4 w-4" />
+                        Admin Livraison
                       </Link>
                       <Link
                         to="/admin/monetization"
@@ -140,7 +164,7 @@ export default function Navbar() {
                         onClick={() => setMobileOpen(false)}
                       >
                         <TrendingUp className="h-4 w-4" />
-                        Demandes
+                        Admin Demandes
                       </Link>
                     </>
                   )}

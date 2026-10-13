@@ -9,8 +9,10 @@ type AuthContextType = {
   profile: SellerProfile | null;
   isAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, displayName: string, phone?: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithFacebook: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function signUp(email: string, password: string, displayName: string) {
+  async function signUp(email: string, password: string, displayName: string, phone?: string) {
     try {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) return { error: error.message };
@@ -101,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.from("seller_profiles").insert({
           id: data.user.id,
           display_name: displayName,
+          phone: phone || "",
         });
       }
       return { error: null };
@@ -122,6 +125,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function signInWithGoogle() {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (error) return { error: error.message };
+      return { error: null };
+    } catch {
+      return { error: "Erreur de connexion avec Google." };
+    }
+  }
+
+  async function signInWithFacebook() {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "facebook",
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (error) return { error: error.message };
+      return { error: null };
+    } catch {
+      return { error: "Erreur de connexion avec Facebook." };
+    }
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setProfile(null);
@@ -129,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}
+      value={{ session, user, profile, isAdmin, loading, signUp, signIn, signInWithGoogle, signInWithFacebook, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

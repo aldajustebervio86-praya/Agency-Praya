@@ -7,11 +7,13 @@ import ProductCard from "../components/ProductCard";
 const CATEGORIES = [
   { name: "Électronique", slug: "electronique" },
   { name: "Accessoires", slug: "accessoires" },
-  { name: "Parfums", slug: "parfums" },
-  { name: "Vêtements", slug: "vetements" },
+  { name: "Parfums et beauté", slug: "parfums" },
+  { name: "Vêtements et chaussures", slug: "vetements" },
   { name: "Livres", slug: "livres" },
-  { name: "Beauté", slug: "beaute" },
-  { name: "Autres", slug: "autres" },
+  { name: "Accessoires de téléphone", slug: "accessoires-telephone" },
+  { name: "Cartes virtuelles et produits numériques", slug: "cartes-virtuelles" },
+  { name: "Jeux et recharges", slug: "jeux-et-recharges" },
+  { name: "Autres produits", slug: "autres" },
 ];
 
 export default function Marketplace() {
@@ -33,6 +35,7 @@ export default function Marketplace() {
         seller_profile:seller_profiles(*)
       `)
       .eq("status", "active")
+      .eq("moderation_status", "approved")
       .order("created_at", { ascending: false });
 
     if (categoryFilter) {

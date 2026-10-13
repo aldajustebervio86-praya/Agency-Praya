@@ -48,6 +48,8 @@ export type Product = {
   image_urls: string[];
   stock: number | null;
   status: "active" | "sold" | "paused";
+  origin_city: string | null;
+  moderation_status: "pending" | "approved" | "rejected" | "revision";
   created_at: string;
   updated_at: string;
   category?: Category | null;
@@ -101,6 +103,8 @@ export type Order = {
   payment_verified: boolean;
   payment_verified_at: string | null;
   buyer_note: string;
+  from_city: string | null;
+  to_city: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -155,12 +159,48 @@ export type OrderMessage = {
 
 export const DELIVERY_FEE = 250;
 
+export type DeliveryRoute = {
+  id: string;
+  from_city: string;
+  to_city: string;
+  fee: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Favorite = {
+  id: string;
+  user_id: string;
+  product_id: string;
+  created_at: string;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: "order" | "message" | "system" | "monetization";
+  title: string;
+  body: string;
+  link_url: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
 export const CATEGORIES = [
   { name: "Électronique", slug: "electronique", icon: "Smartphone" },
   { name: "Accessoires", slug: "accessoires", icon: "Watch" },
-  { name: "Parfums", slug: "parfums", icon: "Sparkles" },
-  { name: "Vêtements", slug: "vetements", icon: "Shirt" },
+  { name: "Parfums et beauté", slug: "parfums", icon: "Sparkles" },
+  { name: "Vêtements et chaussures", slug: "vetements", icon: "Shirt" },
   { name: "Livres", slug: "livres", icon: "Book" },
-  { name: "Beauté", slug: "beaute", icon: "Heart" },
-  { name: "Autres", slug: "autres", icon: "Package" },
+  { name: "Accessoires de téléphone", slug: "accessoires-telephone", icon: "Smartphone" },
+  { name: "Cartes virtuelles et produits numériques", slug: "cartes-virtuelles", icon: "CreditCard" },
+  { name: "Jeux et recharges", slug: "jeux-et-recharges", icon: "Gamepad2" },
+  { name: "Autres produits", slug: "autres", icon: "Package" },
+] as const;
+
+export const HAITI_CITIES = [
+  "Port-au-Prince", "Cap-Haïtien", "Gonaïves", "Limonade", "Saint-Marc",
+  "Pétion-Ville", "Jacmel", "Les Cayes", "Port-de-Paix", "Jérémie",
+  "Hinche", "Fort-Liberté", "Miragoâne", "Léogâne", "Croix-des-Bouquets",
 ] as const;

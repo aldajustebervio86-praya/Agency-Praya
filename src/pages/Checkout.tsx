@@ -3,7 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, Loader2, ShoppingCart, MapPin, AlertCircle, CheckCircle, Truck, Package,
 } from "lucide-react";
-import { supabase, type Product, type SellerProfile, DELIVERY_FEE } from "../lib/supabase";
+import {
+  supabase, type Product, type SellerProfile, type DeliveryRoute, HAITI_CITIES,
+} from "../lib/supabase";
 import { formatPrice } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
 
@@ -24,6 +26,12 @@ export default function Checkout() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [buyerNote, setBuyerNote] = useState("");
 
+  const [fromCity, setFromCity] = useState("");
+  const [toCity, setToCity] = useState("");
+  const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [feeConfirmed, setFeeConfirmed] = useState(false);
+
   useEffect(() => {
     async function fetchProduct() {
       if (!id) return;
@@ -39,10 +47,44 @@ export default function Checkout() {
       }
       setProduct(data);
       setSeller(data.seller_profile || null);
+      if (data.origin_city) {
+        setFromCity(data.origin_city);
+      }
       setLoading(false);
     }
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    async function fetchDeliveryRoutes() {
+      const { data } = await supabase
+        .from("delivery_routes")
+        .select("*")
+        .eq("is_active", true);
+      if (data) {
+        setDeliveryRoutes(data as DeliveryRoute[]);
+      }
+    }
+    fetchDeliveryRoutes();
+  }, []);
+
+  useEffect(() => {
+    if (!fromCity || !toCity) {
+      setDeliveryFee(null);
+      setFeeConfirmed(false);
+      return;
+    }
+    const route = deliveryRoutes.find(
+      (r) => r.from_city === fromCity && r.to_city === toCity && r.is_active
+    );
+    if (route) {
+      setDeliveryFee(route.fee);
+      setFeeConfirmed(true);
+    } else {
+      setDeliveryFee(null);
+      setFeeConfirmed(false);
+    }
+  }, [fromCity, toCity, deliveryRoutes]);
 
   if (loading) {
     return (
@@ -96,14 +138,29 @@ export default function Checkout() {
     );
   }
 
+  const fromCityOptions = product.origin_city
+    ? [product.origin_city, ...HAITI_CITIES.filter((c) => c !== product.origin_city)]
+    : [...HAITI_CITIES];
+
   const productTotal = product.price * quantity;
-  const deliveryTotal = DELIVERY_FEE;
-  const grandTotal = productTotal + deliveryTotal;
+  const deliveryTotal = feeConfirmed && deliveryFee !== null ? deliveryFee : null;
+  const grandTotal = deliveryTotal !== null ? productTotal + deliveryTotal : null;
+
+  const citiesSelected = Boolean(fromCity) && Boolean(toCity);
+  const canSubmit = feeConfirmed && deliveryFee !== null && !submitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (!fromCity) {
+      setError("Veuillez sélectionner la ville de départ.");
+      return;
+    }
+    if (!toCity) {
+      setError("Veuillez sélectionner la ville de destination.");
+      return;
+    }
     if (deliveryAddress.trim().length < 5) {
       setError("Veuillez indiquer une adresse de livraison valide.");
       return;
@@ -116,6 +173,10 @@ export default function Checkout() {
       setError(`La quantité demandée dépude le stock disponible (${product.stock}).`);
       return;
     }
+    if (!feeConfirmed || deliveryFee === null) {
+      setError("Le tarif de livraison pour cet itinéraire doit être confirmé par l'administrateur.");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -125,10 +186,12 @@ export default function Checkout() {
         buyer_id: user.id,
         seller_id: product.seller_id,
         status: "pending_seller_confirmation",
-        delivery_fee: DELIVERY_FEE,
+        delivery_fee: deliveryFee,
         delivery_address: deliveryAddress.trim(),
         buyer_note: buyerNote.trim(),
         payment_method: "moncash",
+        from_city: fromCity,
+        to_city: toCity,
       })
       .select()
       .single();
@@ -221,6 +284,51 @@ export default function Checkout() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Ville de départ
+              </label>
+              <div className="relative">
+                <Truck className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                <select
+                  value={fromCity}
+                  onChange={(e) => setFromCity(e.target.value)}
+                  required
+                  className="input-field pl-11 appearance-none"
+                >
+                  <option value="" disabled>Sélectionnez la ville de départ</option>
+                  {fromCityOptions.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+              {product.origin_city && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Ville d'origine du produit : {product.origin_city}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Ville de destination
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                <select
+                  value={toCity}
+                  onChange={(e) => setToCity(e.target.value)}
+                  required
+                  className="input-field pl-11 appearance-none"
+                >
+                  <option value="" disabled>Sélectionnez la ville de destination</option>
+                  {HAITI_CITIES.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Lieu de livraison
               </label>
               <div className="relative">
@@ -252,19 +360,50 @@ export default function Checkout() {
               />
             </div>
 
-            <div className="rounded-xl bg-brand-50 border border-brand-100 p-4">
+            <div className={`rounded-xl border p-4 ${feeConfirmed ? "bg-brand-50 border-brand-100" : "bg-warning-50 border-warning-200"}`}>
               <p className="text-sm text-gray-600">
                 <Truck className="h-4 w-4 inline mr-1.5 text-brand-600" />
-                Frais de livraison standard: <strong>{formatPrice(DELIVERY_FEE)}</strong>.
-                Pour les zones éloignées, un tarif ajusté pourra être proposé après confirmation du vendeur.
-                Vous pourrez accepter ou refuser ce tarif avant le paiement.
+                {!citiesSelected && (
+                  "Sélectionnez les villes de départ et de destination pour calculer les frais de livraison."
+                )}
+                {citiesSelected && feeConfirmed && deliveryFee !== null && (
+                  <>
+                    Frais de livraison pour l'itinéraire <strong>{fromCity} → {toCity}</strong> :{" "}
+                    <strong>{formatPrice(deliveryFee)}</strong>. Vous pourrez accepter ou refuser ce
+                    tarif avant le paiement.
+                  </>
+                )}
+                {citiesSelected && !feeConfirmed && (
+                  <>
+                    <strong>Tarif à confirmer</strong> pour l'itinéraire{" "}
+                    <strong>{fromCity} → {toCity}</strong>. L'administrateur confirmera le tarif de
+                    livraison pour cet itinéraire. Vous pourrez accepter ou refuser ce tarif avant le
+                    paiement.
+                  </>
+                )}
               </p>
             </div>
 
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShoppingCart className="h-5 w-5" />}
               Confirmer la commande
             </button>
+
+            {!canSubmit && citiesSelected && !feeConfirmed && (
+              <p className="text-xs text-warning-700 text-center">
+                L'administrateur confirmera le tarif de livraison pour cet itinéraire avant que vous
+                puissiez finaliser la commande.
+              </p>
+            )}
+            {!canSubmit && !citiesSelected && (
+              <p className="text-xs text-gray-400 text-center">
+                Sélectionnez les villes de départ et de destination pour continuer.
+              </p>
+            )}
           </form>
 
           {/* Summary */}
@@ -297,16 +436,25 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Frais de livraison</span>
-                  <span className="font-medium text-gray-900">{formatPrice(deliveryTotal)}</span>
+                  <span className="font-medium text-gray-900">
+                    {!citiesSelected
+                      ? "—"
+                      : feeConfirmed && deliveryFee !== null
+                        ? formatPrice(deliveryFee)
+                        : "Tarif à confirmer"}
+                  </span>
                 </div>
                 <div className="border-t border-gray-100 pt-3 flex justify-between">
                   <span className="font-display font-bold text-gray-900">Total</span>
-                  <span className="font-display font-bold text-brand-700 text-lg">{formatPrice(grandTotal)}</span>
+                  <span className="font-display font-bold text-brand-700 text-lg">
+                    {grandTotal !== null ? formatPrice(grandTotal) : "Tarif à confirmer"}
+                  </span>
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-4">
-                Le paiement n'est pas effectué ici. Après confirmation du vendeur, les informations
-                de paiement par MonCash vous seront communiquées.
+                Le paiement n'est pas effectué ici. Après confirmation du vendeur, vous effectuerez le
+                paiement via MonCash au numéro marchand{" "}
+                <strong className="text-gray-600">34652731</strong>.
               </p>
             </div>
           </div>
